@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>党总支会议纪要智能生成系统 (通义千问多线路终极版)</title>
+    <title>党总支会议纪要系统 (表格标题终极修正版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,7 +26,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         input.custom-input { width: 100%; border: 1px solid #d1d5db; padding: 0.5rem; font-size: 0.875rem; border-radius: 0.375rem; }
         input.custom-input:focus { border-color: #ef4444; outline: none; ring: 1px solid #ef4444; }
-        .arrow-icon { color: #9ca3af; margin: 0 0.5rem; }
     </style>
 </head>
 <body>
@@ -39,9 +38,11 @@
 【编号与格式】
 - 所有纪要条目使用中文数字（一、二、三……）编号，单独成段。
 - 不要使用 Markdown 格式，只输出纯文本。
+- 议题和正文请使用仿宋_GB2312 三号字体。
 【动词转换体系】
 - 常见动词：审议（转换为：会议同意）、听取（转换为：会议同意或会议听取）、学习（转换为：会议学习了）
 - 必须转换：如果原文是“审议《XXX》”，纪要中必须写“会议审议《XXX》。会议同意该...”。
+- 汇报人或领学人信息请单独成行。
 【决议与任务分配】
 - 常用决议：会议同意、会议要求。
 - 常用任务分配：要求综合办公室（绝大多数情况）、提请办公会议审议。
@@ -53,10 +54,86 @@
   3. 清晰的任务分配与要求
 请只输出生成的正文内容，不要包含标题、基本信息或议题列表。`;
 
+        // --- 核心表格 XML (只包含表格本身，不含标题和空行) ---
+        const TABLE_XML_TEMPLATE = `
+        <w:tbl>
+            <w:tblPr>
+                <w:tblStyle w:val="TableGrid"/>
+                <w:tblW w:w="9490" w:type="dxa"/>
+                <w:tblBorders>
+                    <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                    <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                    <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                    <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                    <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                    <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+                </w:tblBorders>
+                <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
+            </w:tblPr>
+            <w:tblGrid>
+                <w:gridCol w:w="3163"/>
+                <w:gridCol w:w="3163"/>
+                <w:gridCol w:w="3164"/>
+            </w:tblGrid>
+            <!-- 第一行: 表头 -->
+            <w:tr>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3163" w:type="dxa"/>
+                        <w:vAlign w:val="center"/>
+                    </w:tcPr>
+                    <w:p>
+                        <w:pPr>
+                            <w:jc w:val="center"/>
+                            <w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr>
+                        </w:pPr>
+                        <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>总支委委员</w:t></w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3163" w:type="dxa"/>
+                        <w:vAlign w:val="center"/>
+                    </w:tcPr>
+                    <w:p>
+                        <w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr></w:pPr>
+                        <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>领导阅签</w:t></w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3164" w:type="dxa"/>
+                        <w:vAlign w:val="center"/>
+                    </w:tcPr>
+                    <w:p>
+                        <w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr></w:pPr>
+                        <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>日期</w:t></w:r>
+                    </w:p>
+                </w:tc>
+            </w:tr>
+            <w:tr>
+                <w:tc><w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>臧 华</w:t></w:r></w:p></w:tc>
+                <w:tc><w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p/></w:tc>
+                <w:tc><w:tcPr><w:tcW w:w="3164" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p/></w:tc>
+            </w:tr>
+            <w:tr>
+                <w:tc><w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>孙亦伟</w:t></w:r></w:p></w:tc>
+                <w:tc><w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p/></w:tc>
+                <w:tc><w:tcPr><w:tcW w:w="3164" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p/></w:tc>
+            </w:tr>
+        </w:tbl>`;
+        // --- 核心表格 XML 结束 ---
+        
+        // 用于存储从母版中解析出的样式信息
+        let globalStyle = {
+            pPr: '', // 段落属性，包含缩进、对齐等
+            rPr: ''  // 字符属性，包含字体、字号等
+        };
+
+
         const App = () => {
             const apiKey = "sk-d8f9d80c5d154e5fa8ce9413560ccfe8"; 
             
-            // 替换对：{ key: { old: string, new: string, label: string } }
             const [replaceMap, setReplaceMap] = useState({
                 issue: { label: "文号", old: "", new: "2025－16" },
                 date: { label: "日期", old: "", new: new Date().toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric'}) },
@@ -75,11 +152,8 @@
             const [fileName, setFileName] = useState("");
             const [isLoading, setIsLoading] = useState(false);
             const [statusMsg, setStatusMsg] = useState("请先上传旧文档作为母版");
-
-            // 新增：代理线路选择 (默认线路A)
             const [proxyService, setProxyService] = useState("lineA");
 
-            // 辅助：更新 Map
             const updateMap = (key, field, val) => {
                 setReplaceMap(prev => ({
                     ...prev,
@@ -87,14 +161,49 @@
                 }));
             };
 
-            // 1. 读取并解析旧文档
+            // 辅助函数：提取母版样式
+            const extractStyleFromXml = (xml) => {
+                const ANCHOR_BODY_START = "一、";
+                const textIndex = xml.indexOf(ANCHOR_BODY_START);
+                if (textIndex === -1) return;
+
+                // 找到 "一、" 所在的 <w:p> 段落 XML
+                const pStart = xml.lastIndexOf("<w:p", textIndex);
+                const pEnd = xml.indexOf("</w:p>", textIndex) + 6; 
+                if (pStart === -1 || pEnd === 5) return;
+                
+                const pXml = xml.substring(pStart, pEnd);
+
+                // 1. 提取 <w:pPr> 段落属性 (包含样式、缩进等)
+                const pPrMatch = pXml.match(/<w:pPr>(.*?)<\/w:pPr>/);
+                globalStyle.pPr = pPrMatch ? pPrMatch[1] : '';
+
+                // 2. 提取 <w:rPr> 字符属性 (包含字体、字号等)
+                const rPrMatch = pXml.match(/<w:rPr>(.*?)<\/w:rPr>/);
+                globalStyle.rPr = rPrMatch ? rPrMatch[1] : '';
+                
+                // 确保至少有默认字号和字体，否则用硬编码的仿宋三号
+                if (!globalStyle.rPr) {
+                     globalStyle.rPr = `<w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/><w:szCs w:val="32"/>`;
+                } else {
+                    // 确保 eastAsia 属性是 "仿宋" (解决仿宋_GB2312 编码问题)
+                    globalStyle.rPr = globalStyle.rPr.replace(/w:eastAsia="[^"]*"/, 'w:eastAsia="仿宋"');
+                    if (!globalStyle.rPr.includes('w:eastAsia')) {
+                        globalStyle.rPr += ` w:eastAsia="仿宋"`;
+                    }
+                }
+
+                // 确保有首行缩进
+                if (!globalStyle.pPr || !globalStyle.pPr.includes("<w:ind")) {
+                     globalStyle.pPr += `<w:ind w:firstLine="560" w:firstLineChars="200"/>`;
+                }
+            };
+            
             const handleParseOldDoc = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-
                 setFileName(file.name);
                 setStatusMsg("正在深度解析旧文档...");
-                
                 const arrayBuffer = await file.arrayBuffer();
                 setTemplateBuffer(arrayBuffer);
 
@@ -104,23 +213,23 @@
                         const result = await mammoth.extractRawText({ arrayBuffer: event.target.result });
                         const text = result.value;
                         
-                        // 提取函数
+                        // 从原始 XML 中提取样式
+                        const xml = new window.PizZip(arrayBuffer).file("word/document.xml").asText();
+                        extractStyleFromXml(xml);
+
                         const extract = (regex) => {
                             const match = text.match(regex);
                             return match ? match[1].trim() : "";
                         };
 
                         const newMap = { ...replaceMap };
-                        
-                        // 自动填入“旧内容”和“新内容”的默认值
                         const setVal = (key, regex) => {
                             const val = extract(regex);
                             if (val) {
                                 newMap[key].old = val;
-                                newMap[key].new = val; // 默认新内容等于旧内容，方便修改
+                                newMap[key].new = val; 
                             }
                         };
-
                         setVal('issue', /（(20\d\d[－-]\d+)）/);
                         setVal('date', /(\d{4}年\d{1,2}月\d{1,2}日)/);
                         setVal('time', /时间[：:]\s*(.*)/);
@@ -129,9 +238,8 @@
                         setVal('nonvoting', /列席[：:]\s*(.*)/);
                         setVal('host', /主持[：:]\s*(.*)/);
                         setVal('recorder', /记录[：:]\s*(.*)/);
-
                         setReplaceMap(newMap);
-                        setStatusMsg("✅ 母版加载成功！请在下方确认【旧内容】并输入【新内容】。");
+                        setStatusMsg("✅ 母版加载成功！已继承正文格式。");
                     } catch (error) {
                         console.error(error);
                         setStatusMsg("❌ 解析失败，请手动填写旧内容。");
@@ -141,11 +249,9 @@
                 e.target.value = null;
             };
 
-            // 2. AI 生成 (多线路修复版)
             const handleGenerateAI = async () => {
                 if (!apiKey) { alert("请在代码中填入您的 API Key！"); return; }
                 if (!inputText.trim()) { alert("请输入议题内容！"); return; }
-                
                 setIsLoading(true);
                 let lineName = "未知";
                 if(proxyService === "lineA") lineName = "线路A";
@@ -158,28 +264,18 @@
                 try {
                     const targetUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
                     let finalUrl = "";
-                    let headers = { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    };
+                    let headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
 
-                    // 代理策略配置
                     if (proxyService === "lineA") {
-                        // 线路 A: cors-anywhere (稳定，需激活)
                         finalUrl = "https://cors-anywhere.herokuapp.com/" + targetUrl;
                         headers["X-Requested-With"] = "XMLHttpRequest"; 
                     } else if (proxyService === "lineB") {
-                        // 线路 B: corsproxy.io (免激活)
                         finalUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
                     } else if (proxyService === "lineC") {
-                        // 线路 C: thingproxy (备用)
                         finalUrl = "https://thingproxy.freeboard.io/fetch/" + targetUrl;
                     } else {
-                        // 直连 (需要浏览器插件支持或后端环境)
                         finalUrl = targetUrl;
                     }
-
-                    console.log(`Using Proxy Strategy: ${proxyService}, URL: ${finalUrl}`);
 
                     const response = await fetch(finalUrl, {
                         method: "POST",
@@ -193,50 +289,77 @@
                         })
                     });
 
-                    // 捕获 403 激活错误 (仅针对线路 A)
                     if (response.status === 403 && proxyService === "lineA") {
-                        const text = await response.text();
-                        if(text.includes("See /corsdemo") || text.includes("Forbidden")) {
-                            throw new Error("NEED_ACTIVATION");
-                        }
+                        throw new Error("NEED_ACTIVATION");
                     }
 
                     const data = await response.json();
-                    
-                    if (response.ok && data.choices && data.choices.length > 0) {
+                    if (response.ok && data.choices) {
                         setGeneratedContent(data.choices[0].message.content);
                         setStatusMsg("✅ AI 生成完成！请点击导出。");
                     } else {
-                        console.error(data);
-                        const errorMsg = data.message || data.error?.message || "API Error";
-                        throw new Error(errorMsg);
+                        throw new Error(data.message || "API Error");
                     }
                 } catch (error) {
                     console.error("Fetch Error:", error);
-                    
                     if (error.message === "NEED_ACTIVATION") {
                         setStatusMsg("⚠️ 线路A需激活！请点击下方红色链接。");
-                        alert("🔴 线路A 未激活！\n\n请点击页面右下方的【👉 点此激活线路A】链接。\n在新页面点击按钮获取权限后，再回到这里点击生成。");
-                    } else if (error.message.includes("Failed to fetch")) {
-                        setStatusMsg("❌ 连接被拦截。请尝试切换其他线路。");
-                        alert(`连接失败 (Failed to fetch)。\n\n当前【${lineName}】不可用。\n请尝试切换到 线路B 或 线路C 重试。\n\n推荐：先去激活线路A，它是最稳定的。`);
+                        alert("🔴 线路A 未激活！\n\n请点击页面右下方的【👉 点此激活线路A】链接。");
                     } else {
                         setStatusMsg(`生成失败: ${error.message}`);
-                        alert(`❌ 错误：${error.message}`);
                     }
                 } finally { setIsLoading(false); }
             };
 
-            // 3. 核心：XML 穿透替换算法
-            const escapeRegExp = (string) => {
-                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // 核心：构造 Word XML 段落 (应用继承样式)
+            const makeParagraphXml = (text, alignment = 'left') => {
+                let pPrContent = globalStyle.pPr || '';
+                let rPrContent = globalStyle.rPr || '';
+                const trimmed = text.trim();
+                
+                let jcTag = '';
+                
+                // 检查是否为汇报人/领学人，强制右对齐
+                if (trimmed.startsWith("汇报：") || trimmed.startsWith("领学：") || trimmed.startsWith("汇报:")) {
+                    jcTag = '<w:jc w:val="right"/>';
+                    // 移除段落中的首行缩进（如果存在），确保右对齐不受干扰
+                    pPrContent = pPrContent.replace(/<w:ind[^>]*>/g, ''); 
+                } else {
+                    jcTag = '<w:jc w:val="left"/>';
+                }
+
+                return `<w:p>
+                    <w:pPr>
+                        ${jcTag}
+                        ${pPrContent}
+                    </w:pPr>
+                    <w:r>
+                        <w:rPr>
+                            ${rPrContent}
+                        </w:rPr>
+                        <w:t>${text}</w:t>
+                    </w:r>
+                </w:p>`;
             };
 
-            const createXmlRegex = (plainText) => {
-                if (!plainText) return null;
-                const chars = plainText.split('');
-                const pattern = chars.map(c => escapeRegExp(c)).join('(?:<[^>]+>)*');
-                return new RegExp(pattern, 'g');
+            // 辅助函数：生成空白行 (w:line="480" 对应 Word 的单倍行距)
+            const makeBlankLineXml = (count = 1) => {
+                let xml = '';
+                for (let i = 0; i < count; i++) {
+                    // 使用空的 <w:p> 标签实现空行，并确保其行高为单倍行距 (480)
+                    // 注意：这里为了保证和正文格式统一，可以也继承 pPr
+                    xml += `<w:p><w:pPr><w:spacing w:line="480" w:lineRule="auto"/>${globalStyle.pPr.replace(/<w:ind[^>]*>/g, '')}</w:pPr></w:p>`;
+                }
+                return xml;
+            };
+
+            const findParagraphBounds = (xml, searchText, startIndex = 0) => {
+                const textIndex = xml.indexOf(searchText, startIndex);
+                if (textIndex === -1) return null;
+                const pStart = xml.lastIndexOf("<w:p", textIndex);
+                const pEnd = xml.indexOf("</w:p>", textIndex) + 6; 
+                if (pStart === -1 || pEnd === 5) return null;
+                return { start: pStart, end: pEnd, textIndex: textIndex };
             };
 
             const exportDoc = () => {
@@ -244,34 +367,102 @@
                 
                 try {
                     const zip = new window.PizZip(templateBuffer);
-                    let xml = zip.file("word/document.xml").asText();
+                    let xmlStr = zip.file("word/document.xml").asText();
+                    
+                    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const createXmlRegex = (pt) => {
+                        if (!pt) return null;
+                        const pattern = pt.split('').map(c => escapeRegExp(c)).join('(?:<[^>]+>)*');
+                        return new RegExp(pattern, 'g');
+                    };
 
+                    // 1. 基础信息替换 (日期、地点等)
                     Object.values(replaceMap).forEach(item => {
                         if (item.old && item.new && item.old !== item.new) {
                             const regex = createXmlRegex(item.old);
-                            if (regex) {
-                                xml = xml.replace(regex, item.new);
-                            }
+                            if (regex) xmlStr = xmlStr.replace(regex, item.new);
                         }
                     });
 
-                    if (generatedContent) {
-                        const regexOne = createXmlRegex("一、");
-                        if (regexOne && regexOne.test(xml)) {
-                             alert("⚠️ 提示：系统已更新基础信息（日期、文号等）。\n\n关于正文：由于旧文档的正文位置复杂，请在导出后将新生成的正文复制进去。");
+                    // 2. 核心手术：议题/正文替换，插入重建的表格
+                    if (generatedContent && inputText) {
+                        
+                        const newAgendaXml = inputText.split('\n')
+                            .filter(line => line.trim())
+                            .map(line => makeParagraphXml(line.trim())) 
+                            .join('');
+
+                        const newBodyXml = generatedContent.split('\n')
+                            .filter(line => line.trim())
+                            .map(line => makeParagraphXml(line.trim()))
+                            .join('');
+                        
+                        // --- 构造最终内容块 ---
+                        const middleBlankLine = makeBlankLineXml(1);
+                        const footerBlankLines = makeBlankLineXml(3); 
+
+                        // 表格标题 XML (仅保留标题本身)
+                        const tableTitleXml = `<w:p>
+                            <w:pPr>
+                                <w:jc w:val="center"/>
+                                <w:spacing w:line="480" w:lineRule="auto"/>
+                            </w:pPr>
+                            <w:r>
+                                <w:rPr>
+                                    <w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/>
+                                    <w:sz w:val="32"/>
+                                    <w:szCs w:val="32"/>
+                                    <w:b/>
+                                </w:rPr>
+                                <w:t>总支委会纪要阅签单</w:t>
+                            </w:r>
+                        </w:p>`;
+                        
+                        // 终极拼接：新议题 + 1空行 + 新正文 + 3空行 + 表格标题 + 表格主体
+                        const newContentBlock = 
+                            newAgendaXml + 
+                            middleBlankLine + 
+                            newBodyXml + 
+                            footerBlankLines + 
+                            tableTitleXml + 
+                            TABLE_XML_TEMPLATE; 
+
+                        const ANCHOR_AGENDA = "议题：";
+                        const ANCHOR_BODY_START = "一、";
+
+                        const posAgenda = findParagraphBounds(xmlStr, ANCHOR_AGENDA);
+                        const posBodyStart = findParagraphBounds(xmlStr, ANCHOR_BODY_START, posAgenda ? posAgenda.end : 0);
+                        
+                        // 寻找文档结束标签的起始位置
+                        const bodyEndTagStart = xmlStr.lastIndexOf("</w:body>"); 
+
+                        if (posAgenda && posBodyStart && bodyEndTagStart !== -1) {
+                            
+                            // 1. 头部：从文档开始到 "议题：" 段落结束 (保留 "议题："这三个字)
+                            const replaceStart = posAgenda.end; 
+                            const partHeader = xmlStr.substring(0, replaceStart);
+                            
+                            // 2. 尾部：从 bodyEndTagStart 到文档末尾 (保留 </w:body> 和 </w:document>)
+                            const partFooter = xmlStr.substring(bodyEndTagStart);
+
+                            // 3. 替换区域：从 replaceStart 到 bodyEndTagStart 之间的所有旧内容
+                            xmlStr = partHeader + newContentBlock + partFooter;
+
+                            alert("✅ 成功！\n\n新内容已应用母版格式并完全替换旧内容。\n排版已修正：议题/正文空一行，正文/表格空三行，并加入了表格标题。\n");
+
                         } else {
-                             alert("⚠️ 提示：文档基础信息已更新。\n\n请手动将 AI 生成的正文粘贴到文档合适位置。");
+                            alert("⚠️ 定位失败。请确保母版中包含“议题：”和“一、”这两个关键词。");
                         }
                     }
 
-                    zip.file("word/document.xml", xml);
+                    zip.file("word/document.xml", xmlStr);
                     const blob = zip.generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
                     saveAs(blob, `会议纪要_${replaceMap.issue.new}.docx`);
                     setStatusMsg("🎉 导出成功！");
 
                 } catch (e) {
                     console.error(e);
-                    alert("导出失败，请重试");
+                    alert("导出失败: " + e.message);
                 }
             };
 
@@ -279,7 +470,7 @@
                 <div className="max-w-7xl mx-auto p-6 min-h-screen text-gray-800 font-sans">
                     <div className="bg-white p-8 rounded-xl shadow-xl border border-gray-200">
                         <div className="flex justify-between items-center border-b pb-4 mb-6">
-                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (通义千问多线路版)</h1>
+                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (样式继承终极版)</h1>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -327,7 +518,7 @@
                                         value={inputText} 
                                         onChange={e=>setInputText(e.target.value)} 
                                         className="w-full h-32 p-3 border rounded text-sm font-mono shadow-inner mb-2"
-                                        placeholder="在此输入新议题..."
+                                        placeholder="请在此输入【新议题】列表 (每行一个)..."
                                     />
                                     
                                     {/* 代理选择器 */}
@@ -383,7 +574,7 @@
                                         disabled={!templateBuffer}
                                         className={`w-full py-4 text-white font-bold text-xl rounded shadow ${!templateBuffer ? 'bg-gray-300' : 'bg-green-600 hover:bg-green-700'}`}
                                     >
-                                        📥 导出并替换
+                                        📥 导出 (样式继承终极版)
                                     </button>
                                     <p className="text-center text-xs text-red-500 mt-2 font-bold">{statusMsg}</p>
                                 </div>
