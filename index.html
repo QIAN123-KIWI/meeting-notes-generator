@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>党总支会议纪要系统 (表格标题终极修正版)</title>
+    <title>党总支会议纪要系统 (规则修正版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -34,25 +34,51 @@
     <script type="text/babel">
         const { useState } = React;
 
-        const SYSTEM_PROMPT = `你是一个专业的会议纪要撰写助手。请根据下列规则生成会议纪要正文：
+        // --- 终极修正版提示词：包含用户指定的所有规则和范例 ---
+        const SYSTEM_PROMPT = `你是一个专业的会议纪要撰写助手，服务于“上海新联谊大厦有限公司党总支”。请根据下列规则生成会议纪要正文：
+
+【组织架构红线】
+1. **组织名称**：必须称为“党总支”或“公司党总支”。**严禁**使用“党委”、“党支部”。
+2. **人员称谓**：本组织没有纪检委员，只有“总支委员”。
+3. **部门限制**：公司仅有“综合办公室”和“计划财务部”两个职能部门。
+   - 任务分配时，绝大多数情况写“要求综合办公室...”。
+   - 涉及预算/财务时写“要求计划财务部...”。
+   - **严禁**写“各部门”、“纪检部门”、“纪委”。
+
 【编号与格式】
 - 所有纪要条目使用中文数字（一、二、三……）编号，单独成段。
-- 不要使用 Markdown 格式，只输出纯文本。
-- 议题和正文请使用仿宋_GB2312 三号字体。
+- 不要输出“（第一议题）”等分类标题，直接按顺序编号。
+- 人名禁忌：严禁在正文中编造人名。除非用户输入中明确提到了具体人员变动，否则不要出现人名。
+- 数字格式：数字之间不要加空格（如：必须写“88号”，不能写“8 8号”）。
+
 【动词转换体系】
-- 常见动词：审议（转换为：会议同意）、听取（转换为：会议同意或会议听取）、学习（转换为：会议学习了）
-- 必须转换：如果原文是“审议《XXX》”，纪要中必须写“会议审议《XXX》。会议同意该...”。
-- 汇报人或领学人信息请单独成行。
+- 审议 -> 转换为：会议同意... 或 会议审议了...
+- 听取 -> 转换为：会议听取了... 或 会议同意...
+- 学习 -> 转换为：会议学习了...
+- 传达 -> 转换为：会议传达学习了...
+
 【决议与任务分配】
-- 常用决议：会议同意、会议要求。
-- 常用任务分配：要求综合办公室（绝大多数情况）、提请办公会议审议。
-- 禁止写“各部门”，只能写“综合办公室”或“计划财务部”。
+- 常用决议：会议同意（优先使用）、会议要求。
+- 常用任务分配：要求综合办公室（绝大多数情况）、提请办公会议审议、要求计划财务部（仅限财务预算类）。
+
 【三段式结构】
-- 每条纪要应包含：
-  1. 动词转换后的议题复述
-  2. 明确的会议决议
-  3. 清晰的任务分配与要求
-请只输出生成的正文内容，不要包含标题、基本信息或议题列表。`;
+- 每条纪要应包含：动词转换后的议题复述 + 明确的会议决议 + 清晰的任务分配与要求。
+
+【典型范例（请严格模仿语风）】
+
+一、会议学习了《中共中央政治局召开民主生活会 习近平主持会议并发表重要讲话》。会议要求，公司党员干部要深入学习贯彻习近平总书记在中央政治局民主生活会上的重要讲话精神，把坚定拥护"两个确立"、坚决做到"两个维护"贯穿政治建设全过程。班子成员要带头落实民主生活会制度，聚焦践行习近平新时代中国特色社会主义思想，根据上级要求开好民主生活会，对照查摆问题，以刀刃向内的勇气抓好整改落实。坚持党建引领，将理论学习成果转化为推动中心工作的实绩成效，永葆自我革命精神，持续强化全面从严治党的政治自觉，始终心怀"国之大者"扛牢使命担当。
+二、会议审议《上海新联谊大厦有限公司关于召开2024年度党员领导干部民主生活会的请示》。会议同意该请示，要求综合办公室做好后续上报工作以及会议筹备工作。
+三、会议听取了《2024年度党风廉政建设问题清单》。会议同意该清单，要求综合办公室做好清单内相关措施的落实推进工作。
+四、会议听取了《关于对酒店2025年度业主预算进行预审的报告》。会议同意该报告内容，控制在预算范围内。要求计划财务部和酒店认真做好预算执行工作，提请办公会议审议。
+五、会议听取了《新联谊公司2025年元旦春节党内帮扶拟慰问名单》。会议同意该清单，要求综合办公室落实好帮困慰问相关工作。
+六、会议听取了巡视整改监督工作情况。会议同意该情况，要求综合办公室做好相关后续工作。
+七、会议听取了公司本部员工2024年终考核情况和酒店2024年业绩完成情况以及本部员工年终奖发放方案、酒店员工年终奖发放方案等情况。会议同意上述情况，要求综合办公室和计划财务部做好推进工作，提请办公会议审议。
+八、会议听取了《关于久事集团补选“两委”委员候选人推荐人选推荐情况的报告》（第一轮）。会议同意该报告，要求综合办公室及时做好上报工作。
+九、会议学习了《深入贯彻中央八项规定精神 全力以赴抓好学习教育》。会议要求，全力以赴抓好学习教育，传达集团工作部署，重点掌握这次学习教育的精神，准确领会核心要义。坚持从严从实，抓重点求实效，要坚持结合融合，推动中央八项规定精神纠治“四风”取得更大成效，要把学习教育同推进工作结合起来，在严抓严纠、同查同治、常态长效上下功夫，持续深化作风建设。
+十、会议传达学习了《上海久事（集团）有限公司深入贯彻中央八项规定精神学习教育实施方案》、《久事集团党支部学习教育计划工作提示》。会议要求综合办公室严格根据上级要求做好学习教育启动工作。
+
+【任务】
+根据用户提供的【第一议题材料】（若有）和【常规议题列表】，生成一份完整的、连续编号（一、二、三...）的会议纪要正文。`;
 
         // --- 核心表格 XML (只包含表格本身，不含标题和空行) ---
         const TABLE_XML_TEMPLATE = `
@@ -75,36 +101,23 @@
                 <w:gridCol w:w="3163"/>
                 <w:gridCol w:w="3164"/>
             </w:tblGrid>
-            <!-- 第一行: 表头 -->
             <w:tr>
                 <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:w="3163" w:type="dxa"/>
-                        <w:vAlign w:val="center"/>
-                    </w:tcPr>
+                    <w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>
                     <w:p>
-                        <w:pPr>
-                            <w:jc w:val="center"/>
-                            <w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr>
-                        </w:pPr>
+                        <w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr></w:pPr>
                         <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>总支委委员</w:t></w:r>
                     </w:p>
                 </w:tc>
                 <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:w="3163" w:type="dxa"/>
-                        <w:vAlign w:val="center"/>
-                    </w:tcPr>
+                    <w:tcPr><w:tcW w:w="3163" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>
                     <w:p>
                         <w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr></w:pPr>
                         <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>领导阅签</w:t></w:r>
                     </w:p>
                 </w:tc>
                 <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:w="3164" w:type="dxa"/>
-                        <w:vAlign w:val="center"/>
-                    </w:tcPr>
+                    <w:tcPr><w:tcW w:w="3164" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>
                     <w:p>
                         <w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr></w:pPr>
                         <w:r><w:rPr><w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/></w:rPr><w:t>日期</w:t></w:r>
@@ -122,20 +135,14 @@
                 <w:tc><w:tcPr><w:tcW w:w="3164" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p/></w:tc>
             </w:tr>
         </w:tbl>`;
-        // --- 核心表格 XML 结束 ---
         
-        // 用于存储从母版中解析出的样式信息
-        let globalStyle = {
-            pPr: '', // 段落属性，包含缩进、对齐等
-            rPr: ''  // 字符属性，包含字体、字号等
-        };
-
+        let globalStyle = { pPr: '', rPr: '' };
 
         const App = () => {
             const apiKey = "sk-d8f9d80c5d154e5fa8ce9413560ccfe8"; 
             
             const [replaceMap, setReplaceMap] = useState({
-                issue: { label: "文号", old: "", new: "2025－16" },
+                issue: { label: "文号", old: "", new: "2025－14" },
                 date: { label: "日期", old: "", new: new Date().toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric'}) },
                 time: { label: "时间", old: "", new: "" },
                 location: { label: "地点", old: "", new: "" },
@@ -145,6 +152,7 @@
                 recorder: { label: "记录", old: "", new: "" },
             });
 
+            const [learningMaterial, setLearningMaterial] = useState("");
             const [inputText, setInputText] = useState("");
             const [generatedContent, setGeneratedContent] = useState("");
             
@@ -161,39 +169,29 @@
                 }));
             };
 
-            // 辅助函数：提取母版样式
             const extractStyleFromXml = (xml) => {
                 const ANCHOR_BODY_START = "一、";
                 const textIndex = xml.indexOf(ANCHOR_BODY_START);
                 if (textIndex === -1) return;
 
-                // 找到 "一、" 所在的 <w:p> 段落 XML
                 const pStart = xml.lastIndexOf("<w:p", textIndex);
                 const pEnd = xml.indexOf("</w:p>", textIndex) + 6; 
                 if (pStart === -1 || pEnd === 5) return;
                 
                 const pXml = xml.substring(pStart, pEnd);
-
-                // 1. 提取 <w:pPr> 段落属性 (包含样式、缩进等)
                 const pPrMatch = pXml.match(/<w:pPr>(.*?)<\/w:pPr>/);
                 globalStyle.pPr = pPrMatch ? pPrMatch[1] : '';
-
-                // 2. 提取 <w:rPr> 字符属性 (包含字体、字号等)
                 const rPrMatch = pXml.match(/<w:rPr>(.*?)<\/w:rPr>/);
                 globalStyle.rPr = rPrMatch ? rPrMatch[1] : '';
                 
-                // 确保至少有默认字号和字体，否则用硬编码的仿宋三号
                 if (!globalStyle.rPr) {
                      globalStyle.rPr = `<w:rFonts w:ascii="FangSong" w:eastAsia="仿宋" w:hAnsi="FangSong"/><w:sz w:val="32"/><w:szCs w:val="32"/>`;
                 } else {
-                    // 确保 eastAsia 属性是 "仿宋" (解决仿宋_GB2312 编码问题)
                     globalStyle.rPr = globalStyle.rPr.replace(/w:eastAsia="[^"]*"/, 'w:eastAsia="仿宋"');
                     if (!globalStyle.rPr.includes('w:eastAsia')) {
                         globalStyle.rPr += ` w:eastAsia="仿宋"`;
                     }
                 }
-
-                // 确保有首行缩进
                 if (!globalStyle.pPr || !globalStyle.pPr.includes("<w:ind")) {
                      globalStyle.pPr += `<w:ind w:firstLine="560" w:firstLineChars="200"/>`;
                 }
@@ -212,8 +210,6 @@
                     try {
                         const result = await mammoth.extractRawText({ arrayBuffer: event.target.result });
                         const text = result.value;
-                        
-                        // 从原始 XML 中提取样式
                         const xml = new window.PizZip(arrayBuffer).file("word/document.xml").asText();
                         extractStyleFromXml(xml);
 
@@ -249,9 +245,25 @@
                 e.target.value = null;
             };
 
+            const cleanGeneratedText = (text) => {
+                if (!text) return "";
+                let cleaned = text.replace(/(\d)\s+(\d)/g, '$1$2');
+                cleaned = cleaned.replace(/(\d)\s+(\d)/g, '$1$2');
+                return cleaned;
+            };
+
             const handleGenerateAI = async () => {
-                if (!apiKey) { alert("请在代码中填入您的 API Key！"); return; }
-                if (!inputText.trim()) { alert("请输入议题内容！"); return; }
+                if (!apiKey) { 
+                    setStatusMsg("❌ 错误：API Key 缺失");
+                    alert("检测到 API Key 为空！\n请检查代码中的 apiKey 变量是否已填入。"); 
+                    return; 
+                }
+                if (!inputText.trim() && !learningMaterial.trim()) { 
+                    setStatusMsg("⚠️ 请输入内容");
+                    alert("请输入议题内容或学习材料！"); 
+                    return; 
+                }
+                
                 setIsLoading(true);
                 let lineName = "未知";
                 if(proxyService === "lineA") lineName = "线路A";
@@ -259,7 +271,7 @@
                 if(proxyService === "lineC") lineName = "线路C";
                 if(proxyService === "direct") lineName = "直连";
                 
-                setStatusMsg(`正在尝试连接 (${lineName})...`);
+                setStatusMsg(`正在连接 AI (${lineName})...`);
                 
                 try {
                     const targetUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
@@ -277,6 +289,14 @@
                         finalUrl = targetUrl;
                     }
 
+                    const userPromptContent = `
+【第一议题学习材料】
+${learningMaterial || "无"}
+
+【常规议题列表】
+${inputText || "无"}
+`;
+
                     const response = await fetch(finalUrl, {
                         method: "POST",
                         headers: headers,
@@ -284,7 +304,7 @@
                             model: "qwen-max",
                             messages: [
                                 { role: "system", content: SYSTEM_PROMPT },
-                                { role: "user", content: `【实际会议议题内容】\n${inputText}` }
+                                { role: "user", content: userPromptContent }
                             ]
                         })
                     });
@@ -295,8 +315,10 @@
 
                     const data = await response.json();
                     if (response.ok && data.choices) {
-                        setGeneratedContent(data.choices[0].message.content);
-                        setStatusMsg("✅ AI 生成完成！请点击导出。");
+                        const rawContent = data.choices[0].message.content;
+                        const cleanedContent = cleanGeneratedText(rawContent);
+                        setGeneratedContent(cleanedContent);
+                        setStatusMsg("✅ AI 生成完成！(已自动修正数字间距)");
                     } else {
                         throw new Error(data.message || "API Error");
                     }
@@ -311,18 +333,14 @@
                 } finally { setIsLoading(false); }
             };
 
-            // 核心：构造 Word XML 段落 (应用继承样式)
             const makeParagraphXml = (text, alignment = 'left') => {
                 let pPrContent = globalStyle.pPr || '';
                 let rPrContent = globalStyle.rPr || '';
                 const trimmed = text.trim();
-                
                 let jcTag = '';
                 
-                // 检查是否为汇报人/领学人，强制右对齐
                 if (trimmed.startsWith("汇报：") || trimmed.startsWith("领学：") || trimmed.startsWith("汇报:")) {
                     jcTag = '<w:jc w:val="right"/>';
-                    // 移除段落中的首行缩进（如果存在），确保右对齐不受干扰
                     pPrContent = pPrContent.replace(/<w:ind[^>]*>/g, ''); 
                 } else {
                     jcTag = '<w:jc w:val="left"/>';
@@ -342,12 +360,9 @@
                 </w:p>`;
             };
 
-            // 辅助函数：生成空白行 (w:line="480" 对应 Word 的单倍行距)
             const makeBlankLineXml = (count = 1) => {
                 let xml = '';
                 for (let i = 0; i < count; i++) {
-                    // 使用空的 <w:p> 标签实现空行，并确保其行高为单倍行距 (480)
-                    // 注意：这里为了保证和正文格式统一，可以也继承 pPr
                     xml += `<w:p><w:pPr><w:spacing w:line="480" w:lineRule="auto"/>${globalStyle.pPr.replace(/<w:ind[^>]*>/g, '')}</w:pPr></w:p>`;
                 }
                 return xml;
@@ -360,6 +375,39 @@
                 const pEnd = xml.indexOf("</w:p>", textIndex) + 6; 
                 if (pStart === -1 || pEnd === 5) return null;
                 return { start: pStart, end: pEnd, textIndex: textIndex };
+            };
+
+            // 辅助函数：生成标准化文件名
+            const generateFilename = (issueStr, dateStr) => {
+                // issueStr 如 "2025－14" 或 "2025-14"
+                // dateStr 如 "2025年10月22日"
+                
+                // 1. 提取年份和期数
+                let year = "2025";
+                let issue = "001";
+                const issueMatch = issueStr.match(/(\d{4})[－-](\d+)/);
+                if (issueMatch) {
+                    year = issueMatch[1];
+                    issue = issueMatch[2];
+                }
+                // 确保期数是3位 (如 14 -> 014) 或者是按用户示例拼接
+                // 用户示例: 2025014-2025年...
+                // 看起来是 Year + 3位Issue
+                const issue3Digit = issue.padStart(3, '0');
+
+                // 2. 提取日期数字 (YYYYMMDD)
+                const dateMatch = dateStr.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+                let dateCompact = "20251022";
+                if (dateMatch) {
+                    const y = dateMatch[1];
+                    const m = dateMatch[2].padStart(2, '0');
+                    const d = dateMatch[3].padStart(2, '0');
+                    dateCompact = `${y}${m}${d}`;
+                }
+
+                // 3. 组合
+                // 格式: 2025014-2025年党总支会议14期20251022会议纪要v1.docx
+                return `${year}${issue3Digit}-${year}年党总支会议${issue}期${dateCompact}会议纪要v1.docx`;
             };
 
             const exportDoc = () => {
@@ -376,7 +424,6 @@
                         return new RegExp(pattern, 'g');
                     };
 
-                    // 1. 基础信息替换 (日期、地点等)
                     Object.values(replaceMap).forEach(item => {
                         if (item.old && item.new && item.old !== item.new) {
                             const regex = createXmlRegex(item.old);
@@ -384,10 +431,9 @@
                         }
                     });
 
-                    // 2. 核心手术：议题/正文替换，插入重建的表格
-                    if (generatedContent && inputText) {
+                    if (generatedContent && (inputText || learningMaterial)) {
                         
-                        const newAgendaXml = inputText.split('\n')
+                        const newAgendaXml = (inputText || "第一议题学习").split('\n')
                             .filter(line => line.trim())
                             .map(line => makeParagraphXml(line.trim())) 
                             .join('');
@@ -397,11 +443,9 @@
                             .map(line => makeParagraphXml(line.trim()))
                             .join('');
                         
-                        // --- 构造最终内容块 ---
                         const middleBlankLine = makeBlankLineXml(1);
                         const footerBlankLines = makeBlankLineXml(3); 
 
-                        // 表格标题 XML (仅保留标题本身)
                         const tableTitleXml = `<w:p>
                             <w:pPr>
                                 <w:jc w:val="center"/>
@@ -418,7 +462,6 @@
                             </w:r>
                         </w:p>`;
                         
-                        // 终极拼接：新议题 + 1空行 + 新正文 + 3空行 + 表格标题 + 表格主体
                         const newContentBlock = 
                             newAgendaXml + 
                             middleBlankLine + 
@@ -432,24 +475,14 @@
 
                         const posAgenda = findParagraphBounds(xmlStr, ANCHOR_AGENDA);
                         const posBodyStart = findParagraphBounds(xmlStr, ANCHOR_BODY_START, posAgenda ? posAgenda.end : 0);
-                        
-                        // 寻找文档结束标签的起始位置
                         const bodyEndTagStart = xmlStr.lastIndexOf("</w:body>"); 
 
                         if (posAgenda && posBodyStart && bodyEndTagStart !== -1) {
-                            
-                            // 1. 头部：从文档开始到 "议题：" 段落结束 (保留 "议题："这三个字)
                             const replaceStart = posAgenda.end; 
                             const partHeader = xmlStr.substring(0, replaceStart);
-                            
-                            // 2. 尾部：从 bodyEndTagStart 到文档末尾 (保留 </w:body> 和 </w:document>)
                             const partFooter = xmlStr.substring(bodyEndTagStart);
-
-                            // 3. 替换区域：从 replaceStart 到 bodyEndTagStart 之间的所有旧内容
                             xmlStr = partHeader + newContentBlock + partFooter;
-
-                            alert("✅ 成功！\n\n新内容已应用母版格式并完全替换旧内容。\n排版已修正：议题/正文空一行，正文/表格空三行，并加入了表格标题。\n");
-
+                            alert("✅ 导出成功！\n\n新内容已应用母版格式。\n数字间距已自动修复。");
                         } else {
                             alert("⚠️ 定位失败。请确保母版中包含“议题：”和“一、”这两个关键词。");
                         }
@@ -457,7 +490,11 @@
 
                     zip.file("word/document.xml", xmlStr);
                     const blob = zip.generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-                    saveAs(blob, `会议纪要_${replaceMap.issue.new}.docx`);
+                    
+                    // 生成自定义文件名
+                    const finalFilename = generateFilename(replaceMap.issue.new, replaceMap.date.new);
+                    
+                    saveAs(blob, finalFilename);
                     setStatusMsg("🎉 导出成功！");
 
                 } catch (e) {
@@ -466,21 +503,43 @@
                 }
             };
 
+            const handleFirstTopicFile = async (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                try {
+                    let text = "";
+                    if (file.name.endsWith('.docx')) {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        text = result.value;
+                    } else if (file.name.endsWith('.txt')) {
+                        text = await file.text();
+                    } else {
+                        alert("仅支持 .docx 或 .txt 文件");
+                        return;
+                    }
+                    setLearningMaterial(text);
+                } catch(err) {
+                    console.error(err);
+                    alert("读取失败");
+                }
+            };
+
             return (
                 <div className="max-w-7xl mx-auto p-6 min-h-screen text-gray-800 font-sans">
                     <div className="bg-white p-8 rounded-xl shadow-xl border border-gray-200">
                         <div className="flex justify-between items-center border-b pb-4 mb-6">
-                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (样式继承终极版)</h1>
+                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (规则修正版)</h1>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             
                             {/* 左侧 */}
-                            <div className="lg:col-span-7 space-y-6">
+                            <div className="lg:col-span-5 space-y-6">
                                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex justify-between items-center">
                                     <div>
                                         <h3 className="font-bold text-blue-800 text-lg">第一步：上传旧文档母版</h3>
-                                        <p className="text-xs text-blue-600">{fileName ? `当前母版：${fileName}` : "请上传上次的 .docx 文件，系统将保留其格式"}</p>
+                                        <p className="text-xs text-blue-600">{fileName ? `当前母版：${fileName}` : "请上传上次的 .docx 文件"}</p>
                                     </div>
                                     <label className="cursor-pointer bg-white text-blue-700 border border-blue-300 px-4 py-2 rounded shadow hover:bg-blue-50 font-bold text-sm">
                                         📂 点击上传
@@ -510,63 +569,70 @@
                             </div>
 
                             {/* 右侧 */}
-                            <div className="lg:col-span-5 space-y-6">
+                            <div className="lg:col-span-7 space-y-6">
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full flex flex-col">
-                                    <h3 className="font-bold text-gray-700 mb-2 border-l-4 border-green-500 pl-2">第三步：议题与正文</h3>
+                                    <h3 className="font-bold text-gray-700 mb-2 border-l-4 border-green-500 pl-2">第三步：输入议题信息</h3>
                                     
-                                    <textarea 
-                                        value={inputText} 
-                                        onChange={e=>setInputText(e.target.value)} 
-                                        className="w-full h-32 p-3 border rounded text-sm font-mono shadow-inner mb-2"
-                                        placeholder="请在此输入【新议题】列表 (每行一个)..."
-                                    />
-                                    
-                                    {/* 代理选择器 */}
-                                    <div className="mb-4 bg-yellow-50 p-3 rounded border border-yellow-200">
-                                        <div className="text-xs font-bold text-gray-700 mb-2">选择连接线路 (若失败请切换):</div>
-                                        <div className="flex flex-wrap gap-2 mb-2">
-                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
-                                                <input type="radio" name="proxy" checked={proxyService === "lineA"} onChange={() => setProxyService("lineA")} className="mr-1"/>
-                                                线路A (Heroku/稳定/需激活)
-                                            </label>
-                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
-                                                <input type="radio" name="proxy" checked={proxyService === "lineB"} onChange={() => setProxyService("lineB")} className="mr-1"/>
-                                                线路B (CorsProxy)
-                                            </label>
-                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
-                                                <input type="radio" name="proxy" checked={proxyService === "lineC"} onChange={() => setProxyService("lineC")} className="mr-1"/>
-                                                线路C (ThingProxy)
-                                            </label>
-                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
-                                                <input type="radio" name="proxy" checked={proxyService === "direct"} onChange={() => setProxyService("direct")} className="mr-1"/>
-                                                直连 (需插件)
+                                    {/* 新增：第一议题区域 */}
+                                    <div className="mb-4 bg-white p-3 rounded border border-gray-200 shadow-sm">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-bold text-sm text-red-600">【第一议题】学习材料</span>
+                                            <label className="cursor-pointer text-xs bg-gray-100 px-2 py-1 rounded border hover:bg-gray-200">
+                                                📂 上传文档 (.docx/.txt)
+                                                <input type="file" className="hidden" onChange={handleFirstTopicFile} accept=".docx,.txt"/>
                                             </label>
                                         </div>
-                                        
-                                        {proxyService === "lineA" && (
-                                            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                                <span className="font-bold">🔴 必做：首次使用请点击下方链接激活：</span><br/>
-                                                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" className="underline font-bold text-red-600 text-sm">
-                                                    👉 点此激活线路A
-                                                </a>
-                                                <span className="ml-1 text-gray-500">(在新页面点按钮即可)</span>
-                                            </div>
-                                        )}
+                                        <textarea 
+                                            value={learningMaterial} 
+                                            onChange={e=>setLearningMaterial(e.target.value)} 
+                                            className="w-full h-24 p-2 border rounded text-xs font-mono mb-1 focus:ring-1 focus:ring-red-500"
+                                            placeholder="在此粘贴第一议题的学习材料原文（如讲话稿、文件全文）。AI将根据此内容生成“一、会议学习了...”。若无第一议题，请留空。"
+                                        />
                                     </div>
 
-                                    <button 
-                                        onClick={handleGenerateAI}
-                                        disabled={isLoading}
-                                        className={`w-full py-2 text-white font-bold rounded shadow mb-4 ${isLoading ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'}`}
-                                    >
-                                        {isLoading ? <div className="loader mx-auto"></div> : "AI 生成正文 (Qwen-max)"}
-                                    </button>
+                                    {/* 常规议题区域 */}
+                                    <div className="mb-4">
+                                        <div className="font-bold text-sm text-gray-700 mb-1">【常规议题】列表</div>
+                                        <textarea 
+                                            value={inputText} 
+                                            onChange={e=>setInputText(e.target.value)} 
+                                            className="w-full h-32 p-3 border rounded text-sm font-mono shadow-inner mb-2"
+                                            placeholder="请输入其他议题列表，每行一个..."
+                                        />
+                                    </div>
+                                    
+                                    {/* 代理选择与按钮 */}
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
+                                            <div className="text-xs font-bold text-gray-700 mb-1">选择线路:</div>
+                                            <select 
+                                                value={proxyService} 
+                                                onChange={e=>setProxyService(e.target.value)}
+                                                className="w-full text-xs p-1 border rounded"
+                                            >
+                                                <option value="lineA">线路A (Heroku/需激活)</option>
+                                                <option value="lineB">线路B (CorsProxy)</option>
+                                                <option value="lineC">线路C (ThingProxy)</option>
+                                                <option value="direct">直连 (需插件)</option>
+                                            </select>
+                                            {proxyService === "lineA" && (
+                                                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" className="block mt-1 text-center text-xs text-red-600 underline font-bold">👉 点此激活线路A</a>
+                                            )}
+                                        </div>
+                                        <button 
+                                            onClick={handleGenerateAI}
+                                            disabled={isLoading}
+                                            className={`h-full text-white font-bold rounded shadow flex items-center justify-center ${isLoading ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'}`}
+                                        >
+                                            {isLoading ? <div className="loader"></div> : "AI 生成正文"}
+                                        </button>
+                                    </div>
 
                                     <textarea 
                                         value={generatedContent} 
                                         readOnly
                                         className="w-full flex-grow p-3 border rounded text-sm font-mono bg-white mb-4 min-h-[150px]"
-                                        placeholder="生成结果..."
+                                        placeholder="AI 生成结果将显示在这里..."
                                     />
 
                                     <button 
@@ -574,7 +640,7 @@
                                         disabled={!templateBuffer}
                                         className={`w-full py-4 text-white font-bold text-xl rounded shadow ${!templateBuffer ? 'bg-gray-300' : 'bg-green-600 hover:bg-green-700'}`}
                                     >
-                                        📥 导出 (样式继承终极版)
+                                        📥 导出 Word
                                     </button>
                                     <p className="text-center text-xs text-red-500 mt-2 font-bold">{statusMsg}</p>
                                 </div>
