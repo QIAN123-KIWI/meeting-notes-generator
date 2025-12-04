@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>党总支会议纪要智能生成系统 (母版强力替换版)</title>
+    <title>党总支会议纪要智能生成系统 (通义千问多线路终极版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -54,7 +54,7 @@
 请只输出生成的正文内容，不要包含标题、基本信息或议题列表。`;
 
         const App = () => {
-            const apiKey = ""; 
+            const apiKey = "sk-d8f9d80c5d154e5fa8ce9413560ccfe8"; 
             
             // 替换对：{ key: { old: string, new: string, label: string } }
             const [replaceMap, setReplaceMap] = useState({
@@ -75,6 +75,9 @@
             const [fileName, setFileName] = useState("");
             const [isLoading, setIsLoading] = useState(false);
             const [statusMsg, setStatusMsg] = useState("请先上传旧文档作为母版");
+
+            // 新增：代理线路选择 (默认线路A)
+            const [proxyService, setProxyService] = useState("lineA");
 
             // 辅助：更新 Map
             const updateMap = (key, field, val) => {
@@ -138,28 +141,89 @@
                 e.target.value = null;
             };
 
-            // 2. AI 生成
+            // 2. AI 生成 (多线路修复版)
             const handleGenerateAI = async () => {
+                if (!apiKey) { alert("请在代码中填入您的 API Key！"); return; }
                 if (!inputText.trim()) { alert("请输入议题内容！"); return; }
+                
                 setIsLoading(true);
-                setStatusMsg("AI 正在撰写纪要...");
+                let lineName = "未知";
+                if(proxyService === "lineA") lineName = "线路A";
+                if(proxyService === "lineB") lineName = "线路B";
+                if(proxyService === "lineC") lineName = "线路C";
+                if(proxyService === "direct") lineName = "直连";
+                
+                setStatusMsg(`正在尝试连接 (${lineName})...`);
+                
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    const targetUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+                    let finalUrl = "";
+                    let headers = { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    };
+
+                    // 代理策略配置
+                    if (proxyService === "lineA") {
+                        // 线路 A: cors-anywhere (稳定，需激活)
+                        finalUrl = "https://cors-anywhere.herokuapp.com/" + targetUrl;
+                        headers["X-Requested-With"] = "XMLHttpRequest"; 
+                    } else if (proxyService === "lineB") {
+                        // 线路 B: corsproxy.io (免激活)
+                        finalUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+                    } else if (proxyService === "lineC") {
+                        // 线路 C: thingproxy (备用)
+                        finalUrl = "https://thingproxy.freeboard.io/fetch/" + targetUrl;
+                    } else {
+                        // 直连 (需要浏览器插件支持或后端环境)
+                        finalUrl = targetUrl;
+                    }
+
+                    console.log(`Using Proxy Strategy: ${proxyService}, URL: ${finalUrl}`);
+
+                    const response = await fetch(finalUrl, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: headers,
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `【实际会议议题内容】\n${inputText}` }] }],
-                            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+                            model: "qwen-max",
+                            messages: [
+                                { role: "system", content: SYSTEM_PROMPT },
+                                { role: "user", content: `【实际会议议题内容】\n${inputText}` }
+                            ]
                         })
                     });
+
+                    // 捕获 403 激活错误 (仅针对线路 A)
+                    if (response.status === 403 && proxyService === "lineA") {
+                        const text = await response.text();
+                        if(text.includes("See /corsdemo") || text.includes("Forbidden")) {
+                            throw new Error("NEED_ACTIVATION");
+                        }
+                    }
+
                     const data = await response.json();
-                    if (response.ok && data.candidates) {
-                        setGeneratedContent(data.candidates[0].content.parts[0].text);
+                    
+                    if (response.ok && data.choices && data.choices.length > 0) {
+                        setGeneratedContent(data.choices[0].message.content);
                         setStatusMsg("✅ AI 生成完成！请点击导出。");
-                    } else throw new Error("API Error");
+                    } else {
+                        console.error(data);
+                        const errorMsg = data.message || data.error?.message || "API Error";
+                        throw new Error(errorMsg);
+                    }
                 } catch (error) {
-                    console.error(error);
-                    setStatusMsg("生成失败");
+                    console.error("Fetch Error:", error);
+                    
+                    if (error.message === "NEED_ACTIVATION") {
+                        setStatusMsg("⚠️ 线路A需激活！请点击下方红色链接。");
+                        alert("🔴 线路A 未激活！\n\n请点击页面右下方的【👉 点此激活线路A】链接。\n在新页面点击按钮获取权限后，再回到这里点击生成。");
+                    } else if (error.message.includes("Failed to fetch")) {
+                        setStatusMsg("❌ 连接被拦截。请尝试切换其他线路。");
+                        alert(`连接失败 (Failed to fetch)。\n\n当前【${lineName}】不可用。\n请尝试切换到 线路B 或 线路C 重试。\n\n推荐：先去激活线路A，它是最稳定的。`);
+                    } else {
+                        setStatusMsg(`生成失败: ${error.message}`);
+                        alert(`❌ 错误：${error.message}`);
+                    }
                 } finally { setIsLoading(false); }
             };
 
@@ -168,8 +232,6 @@
                 return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             };
 
-            // 构造能忽略 XML 标签的正则
-            // 例如：把 "2025" 变成 "2(?:<[^>]+>)*0(?:<[^>]+>)*2(?:<[^>]+>)*5"
             const createXmlRegex = (plainText) => {
                 if (!plainText) return null;
                 const chars = plainText.split('');
@@ -182,11 +244,8 @@
                 
                 try {
                     const zip = new window.PizZip(templateBuffer);
-                    
-                    // 获取核心 XML
                     let xml = zip.file("word/document.xml").asText();
 
-                    // --- 替换基础信息 ---
                     Object.values(replaceMap).forEach(item => {
                         if (item.old && item.new && item.old !== item.new) {
                             const regex = createXmlRegex(item.old);
@@ -196,11 +255,10 @@
                         }
                     });
 
-                    // --- 替换正文 (追加模式) ---
                     if (generatedContent) {
                         const regexOne = createXmlRegex("一、");
                         if (regexOne && regexOne.test(xml)) {
-                             alert(⚠️ 提示：系统已更新基础信息（日期、文号等）。\n\n关于正文：由于旧文档的正文位置复杂，请在导出后将新生成的正文复制进去。");
+                             alert("⚠️ 提示：系统已更新基础信息（日期、文号等）。\n\n关于正文：由于旧文档的正文位置复杂，请在导出后将新生成的正文复制进去。");
                         } else {
                              alert("⚠️ 提示：文档基础信息已更新。\n\n请手动将 AI 生成的正文粘贴到文档合适位置。");
                         }
@@ -210,9 +268,6 @@
                     const blob = zip.generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
                     saveAs(blob, `会议纪要_${replaceMap.issue.new}.docx`);
                     setStatusMsg("🎉 导出成功！");
-                    
-                    // 修复：移除自动剪贴板写入以防止错误
-                    // navigator.clipboard.writeText(generatedContent).catch(err => console.log('Clipboard write failed', err));
 
                 } catch (e) {
                     console.error(e);
@@ -224,14 +279,13 @@
                 <div className="max-w-7xl mx-auto p-6 min-h-screen text-gray-800 font-sans">
                     <div className="bg-white p-8 rounded-xl shadow-xl border border-gray-200">
                         <div className="flex justify-between items-center border-b pb-4 mb-6">
-                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (母版强力替换版)</h1>
+                            <h1 className="text-2xl font-bold text-red-700">党总支会议纪要系统 (通义千问多线路版)</h1>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             
-                            {/* 左侧：母版与替换设置 */}
+                            {/* 左侧 */}
                             <div className="lg:col-span-7 space-y-6">
-                                {/* 上传区 */}
                                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex justify-between items-center">
                                     <div>
                                         <h3 className="font-bold text-blue-800 text-lg">第一步：上传旧文档母版</h3>
@@ -243,11 +297,8 @@
                                     </label>
                                 </div>
 
-                                {/* 替换映射表 */}
                                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                                     <h3 className="font-bold text-gray-700 mb-3 border-l-4 border-red-500 pl-2">第二步：确认替换内容</h3>
-                                    <p className="text-xs text-gray-500 mb-4">系统自动读取了左边的【旧内容】，请在右边输入本期的【新内容】。</p>
-                                    
                                     <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto pr-2">
                                         {Object.entries(replaceMap).map(([key, val]) => (
                                             <div key={key} className="flex items-center bg-gray-50 p-2 rounded">
@@ -267,7 +318,7 @@
                                 </div>
                             </div>
 
-                            {/* 右侧：正文生成与导出 */}
+                            {/* 右侧 */}
                             <div className="lg:col-span-5 space-y-6">
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full flex flex-col">
                                     <h3 className="font-bold text-gray-700 mb-2 border-l-4 border-green-500 pl-2">第三步：议题与正文</h3>
@@ -278,12 +329,46 @@
                                         className="w-full h-32 p-3 border rounded text-sm font-mono shadow-inner mb-2"
                                         placeholder="在此输入新议题..."
                                     />
+                                    
+                                    {/* 代理选择器 */}
+                                    <div className="mb-4 bg-yellow-50 p-3 rounded border border-yellow-200">
+                                        <div className="text-xs font-bold text-gray-700 mb-2">选择连接线路 (若失败请切换):</div>
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
+                                                <input type="radio" name="proxy" checked={proxyService === "lineA"} onChange={() => setProxyService("lineA")} className="mr-1"/>
+                                                线路A (Heroku/稳定/需激活)
+                                            </label>
+                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
+                                                <input type="radio" name="proxy" checked={proxyService === "lineB"} onChange={() => setProxyService("lineB")} className="mr-1"/>
+                                                线路B (CorsProxy)
+                                            </label>
+                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
+                                                <input type="radio" name="proxy" checked={proxyService === "lineC"} onChange={() => setProxyService("lineC")} className="mr-1"/>
+                                                线路C (ThingProxy)
+                                            </label>
+                                            <label className="flex items-center cursor-pointer text-xs bg-white px-2 py-1 rounded border">
+                                                <input type="radio" name="proxy" checked={proxyService === "direct"} onChange={() => setProxyService("direct")} className="mr-1"/>
+                                                直连 (需插件)
+                                            </label>
+                                        </div>
+                                        
+                                        {proxyService === "lineA" && (
+                                            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                                                <span className="font-bold">🔴 必做：首次使用请点击下方链接激活：</span><br/>
+                                                <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" className="underline font-bold text-red-600 text-sm">
+                                                    👉 点此激活线路A
+                                                </a>
+                                                <span className="ml-1 text-gray-500">(在新页面点按钮即可)</span>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <button 
                                         onClick={handleGenerateAI}
                                         disabled={isLoading}
                                         className={`w-full py-2 text-white font-bold rounded shadow mb-4 ${isLoading ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'}`}
                                     >
-                                        {isLoading ? <div className="loader mx-auto"></div> : "AI 生成正文"}
+                                        {isLoading ? <div className="loader mx-auto"></div> : "AI 生成正文 (Qwen-max)"}
                                     </button>
 
                                     <textarea 
@@ -300,7 +385,7 @@
                                     >
                                         📥 导出并替换
                                     </button>
-                                    <p className="text-center text-xs text-gray-400 mt-2">{statusMsg}</p>
+                                    <p className="text-center text-xs text-red-500 mt-2 font-bold">{statusMsg}</p>
                                 </div>
                             </div>
 
@@ -310,7 +395,8 @@
             );
         };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
